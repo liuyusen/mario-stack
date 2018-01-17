@@ -1,0 +1,139 @@
+version: '2'
+
+services:
+  nginx:
+    image: blacklabelops/nginx
+    container_name: nginx_blacklabel_prod
+    ports:
+      - '443:443'
+      - '80:80'
+    volumes:
+      - nginx_volume:/home/nginx
+      - letsencrypt_certificates:/etc/letsencrypt
+      - letsencrypt_challenges:/var/www/letsencrypt
+    environment:
+      - 'TZ=${JIRA_TIME_ZONE}'
+      - 'NGINX_REDIRECT_PORT80=${JIRA_PORT80_REDIRECT}'
+      - 'SERVER1SERVER_NAME=${JIRA_DOMAIN_NAME}'
+      - 'SERVER1REVERSE_PROXY_LOCATION1=/'
+      - 'SERVER1REVERSE_PROXY_PASS1=http://jira:8080'
+      - 'SERVER1HTTPS_ENABLED=${JIRA_HTTPS}'
+      - 'SERVER1HTTP_ENABLED=${JIRA_HTTP}'
+      - 'SERVER1LETSENCRYPT_CERTIFICATES=${JIRA_HTTPS}'
+      - 'SERVER1CERTIFICATE_FILE=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER1CERTIFICATE_KEY=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME_PARENT}/privkey.pem'
+      - 'SERVER1CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER1PROXY_APPLICATION=jira'
+      - 'SERVER2SERVER_NAME=${JENKINS_DOMAIN_NAME}'
+      - 'SERVER2REVERSE_PROXY_LOCATION1=/'
+      - 'SERVER2REVERSE_PROXY_PASS1=http://jenkins:8080/'
+      - 'SERVER2HTTPS_ENABLED=${JENKINS_HTTPS}'
+      - 'SERVER2HTTP_ENABLED=${JENKINS_HTTP}'
+      - 'SERVER2LETSENCRYPT_CERTIFICATES=${JENKINS_HTTPS}'
+      - 'SERVER2CERTIFICATE_FILE=/etc/letsencrypt/live/${JENKINS_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER2CERTIFICATE_KEY=/etc/letsencrypt/live/${JENKINS_DOMAIN_NAME_PARENT}/privkey.pem'
+      - 'SERVER2CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${JENKINS_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER2PROXY_APPLICATION=jenkins'
+      - 'SERVER3SERVER_NAME=${KEYCLOAK_DOMAIN_NAME}'
+      - 'SERVER3REVERSE_PROXY_LOCATION1=/auth'
+      - 'SERVER3REVERSE_PROXY_PASS1=http://keycloak:8080/'
+      - 'SERVER3HTTPS_ENABLED=${KEYCLOAK_HTTPS}'
+      - 'SERVER3HTTP_ENABLED=${KEYCLOAK_HTTP}'
+      - 'SERVER3LETSENCRYPT_CERTIFICATES=${KEYCLOAK_HTTPS}'
+      - 'SERVER3CERTIFICATE_FILE=/etc/letsencrypt/live/${KEYCLOAK_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER3CERTIFICATE_KEY=/etc/letsencrypt/live/${KEYCLOAK_DOMAIN_NAME_PARENT}/privkey.pem'
+      - 'SERVER3CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${KEYCLOAK_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER3PROXY_APPLICATION=keycloak'
+    restart: unless-stopped
+    env_file:
+      - default.env
+  jira_postgresql:
+    image: blacklabelops/postgres:${JIRA_POSTGRES_VERSION}
+    container_name: jira_postgresql
+    hostname: jira_postgresql
+    volumes:
+      - jira_postgresql_volume:/var/lib/postgresql/data
+    environment:
+      - 'TZ=${JIRA_TIME_ZONE}'
+      - 'POSTGRES_DB=jiradb'
+      - 'POSTGRES_USER=${JIRA_DB_USERNAME}'
+      - 'POSTGRES_PASSWORD=${JIRA_DB_PASSWORD}'
+      - 'POSTGRES_ENCODING=UNICODE'
+      - 'POSTGRES_COLLATE=C'
+      - 'POSTGRES_COLLATE_TYPE=C'
+    restart: unless-stopped
+    env_file:
+      - default.env
+  jira:
+    image: blacklabelops/jira:${JIRA_VERSION}
+    container_name: jira
+    hostname: jira
+    volumes:
+      - jira_volume:/var/atlassian/jira
+    environment:
+      - 'TZ=${JIRA_TIME_ZONE}'
+      - "CATALINA_OPTS=${JIRA_JAVA_OPTIONS}"
+      - "JIRA_PROXY_NAME=${JIRA_DOMAIN_NAME}"
+      - "JIRA_PROXY_PORT=${JIRA_PROXY_PORT}"
+      - "JIRA_PROXY_SCHEME=${JIRA_PROXY_SCHEME}"
+      - 'JIRA_DATABASE_URL=postgresql://${JIRA_DB_USERNAME}@jira_postgresql/jiradb'
+      - 'JIRA_DB_PASSWORD=${JIRA_DB_PASSWORD}'
+      - 'JIRA_DELAYED_START=${JIRA_DELAYED_START}'
+    restart: unless-stopped
+    env_file:
+      - default.env
+
+  jenkins:
+    image: blacklabelops/jenkins:alpine
+    container_name: jenkins
+    hostname: jenkins
+    networks:
+      - jenkinsnet
+    ports:
+     - "8090:8080"
+    volumes:
+      - jenkinsdata:/jenkins
+      - jenkinslogs:/var/log
+    env_file:
+      - jenkins-master.env
+    labels:
+      com.blacklabelops.description: "Jenkins Continuous Integration System"
+      com.blacklabelops.service: "jenkins-master"
+    restart: unless-stopped
+
+  jenkins_slave_1:
+    image: blacklabelops/swarm-jdk8
+    container_name: jenkins_slave_1
+    networks:
+      - jenkinsnet
+    env_file:
+      - jenkins-slave.env
+    labels:
+      com.blacklabelops.description: "Jenkins Swarm JDK-8 Slave"
+      com.blacklabelops.service: "slave"
+      com.blacklabelops.applications: "java maven gradle"
+    restart: unless-stopped
+
+volumes:
+  nginx_volume:
+    external: true
+  letsencrypt_certificates:
+    external: true
+  letsencrypt_challenges:
+    external: true
+  jira_postgresql_volume:
+    external: true
+  jira_volume:
+    external: true
+  keycloak_volume:
+    external: true
+  keycloak_postgresql_volume:
+    external: true
+  jenkinsdata:
+    external: true
+  jenkinslogs:
+    external: true
+
+networks:
+  jenkinsnet:
+    driver: bridge
