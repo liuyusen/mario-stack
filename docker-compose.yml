@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 services:
   nginx:
@@ -45,8 +45,6 @@ services:
       - 'SERVER3CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${KEYCLOAK_DOMAIN_NAME_PARENT}/fullchain.pem'
       - 'SERVER3PROXY_APPLICATION=keycloak'
     restart: unless-stopped
-    env_file:
-      - default.env
   jira_postgresql:
     image: blacklabelops/postgres:${JIRA_POSTGRES_VERSION}
     container_name: jira_postgresql
@@ -62,8 +60,6 @@ services:
       - 'POSTGRES_COLLATE=C'
       - 'POSTGRES_COLLATE_TYPE=C'
     restart: unless-stopped
-    env_file:
-      - default.env
   jira:
     image: blacklabelops/jira:${JIRA_VERSION}
     container_name: jira
@@ -80,8 +76,6 @@ services:
       - 'JIRA_DB_PASSWORD=${JIRA_DB_PASSWORD}'
       - 'JIRA_DELAYED_START=${JIRA_DELAYED_START}'
     restart: unless-stopped
-    env_file:
-      - default.env
 
   jenkins:
     image: blacklabelops/jenkins:alpine
