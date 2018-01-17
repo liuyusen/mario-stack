@@ -3,7 +3,7 @@ version: '2'
 services:
   nginx:
     image: blacklabelops/nginx
-    container_name: nginx_blacklabel_prod
+    container_name: nginx_server
     ports:
       - '443:443'
       - '80:80'
