@@ -8,7 +8,7 @@ services:
       - '443:443'
       - '80:80'
     volumes:
-      - nginx_volume:/etc/nginx
+      - nginx_volume:/home/nginx
       - letsencrypt_certificates:/etc/letsencrypt
       - letsencrypt_challenges:/var/www/letsencrypt
     environment:
