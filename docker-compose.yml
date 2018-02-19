@@ -101,6 +101,7 @@ services:
     restart: unless-stopped
   bitbucket:
     image: blacklabelops/bitbucket:${BITBUCKET_VERSION}
+    container_name: bitbucket
     hostname: bitbucket
     ports:
       - 7999:7999
