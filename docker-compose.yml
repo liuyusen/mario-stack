@@ -46,7 +46,7 @@ services:
       - 'SERVER3PROXY_APPLICATION=keycloak'
       - 'SERVER4SERVER_NAME=${BITBUCKET_DOMAIN_NAME}'
       - 'SERVER4REVERSE_PROXY_LOCATION1=/'
-      - 'SERVER4REVERSE_PROXY_PASS1=http://bitbucket:7999'
+      - 'SERVER4REVERSE_PROXY_PASS1=http://bitbucket:7990'
       - 'SERVER4HTTPS_ENABLED=${BITBUCKET_HTTPS}'
       - 'SERVER4HTTP_ENABLED=${BITBUCKET_HTTP}'
       - 'SERVER4LETSENCRYPT_CERTIFICATES=${BITBUCKET_HTTPS}'
@@ -103,8 +103,6 @@ services:
     image: blacklabelops/bitbucket:${BITBUCKET_VERSION}
     container_name: bitbucket
     hostname: bitbucket
-    ports:
-      - 7999:7999
     volumes:
       - bitbucket_volume:/var/atlassian/bitbucket
     environment:
