@@ -93,7 +93,7 @@ services:
     volumes:
       - bitbucket_postgresql_volume:/var/lib/postgresql/data
     environment:
-      - 'TZ=${ATLASSIAN_TIME_ZONE}'
+      - 'TZ=${JIRA_TIME_ZONE}'
       - 'POSTGRES_DB=atlassiandb'
       - 'POSTGRES_USER=${BITBUCKET_DB_USERNAME}'
       - 'POSTGRES_PASSWORD=${BITBUCKET_DB_PASSWORD}'
@@ -107,11 +107,11 @@ services:
     volumes:
       - bitbucket_volume:/var/atlassian/bitbucket
     environment:
-      - 'TZ=${ATLASSIAN_TIME_ZONE}'
+      - 'TZ=${BITBUCKET_TIME_ZONE}'
       - "CATALINA_OPTS=${BITBUCKET_JAVA_OPTIONS}"
       - "BITBUCKET_PROXY_NAME=${BITBUCKET_DOMAIN_NAME}"
-      - "BITBUCKET_PROXY_PORT=${ATLASSIAN_PROXY_PORT}"
-      - "BITBUCKET_PROXY_SCHEME=${ATLASSIAN_PROXY_SCHEME}"
+      - "BITBUCKET_PROXY_PORT=${BITBUCKET_PROXY_PORT}"
+      - "BITBUCKET_PROXY_SCHEME=${BITBUCKET_PROXY_SCHEME}"
     restart: unless-stopped
 
   jenkins:
