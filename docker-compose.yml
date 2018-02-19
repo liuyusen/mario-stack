@@ -44,6 +44,16 @@ services:
       - 'SERVER3CERTIFICATE_KEY=/etc/letsencrypt/live/${KEYCLOAK_DOMAIN_NAME_PARENT}/privkey.pem'
       - 'SERVER3CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${KEYCLOAK_DOMAIN_NAME_PARENT}/fullchain.pem'
       - 'SERVER3PROXY_APPLICATION=keycloak'
+      - 'SERVER4SERVER_NAME=${BITBUCKET_DOMAIN_NAME}'
+      - 'SERVER4REVERSE_PROXY_LOCATION1=/'
+      - 'SERVER4REVERSE_PROXY_PASS1=http://bitbucket:7999'
+      - 'SERVER4HTTPS_ENABLED=${BITBUCKET_HTTPS}'
+      - 'SERVER4HTTP_ENABLED=${BITBUCKET_HTTP}'
+      - 'SERVER4LETSENCRYPT_CERTIFICATES=${BITBUCKET_HTTPS}'
+      - 'SERVER4CERTIFICATE_FILE=/etc/letsencrypt/live/${BITBUCKET_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER4CERTIFICATE_KEY=/etc/letsencrypt/live/${BITBUCKET_DOMAIN_NAME_PARENT}/privkey.pem'
+      - 'SERVER4CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${BITBUCKET_DOMAIN_NAME_PARENT}/fullchain.pem'
+      - 'SERVER4PROXY_APPLICATION=bitbucket'
     restart: unless-stopped
   jira_postgresql:
     image: blacklabelops/postgres:${JIRA_POSTGRES_VERSION}
@@ -75,6 +85,33 @@ services:
       - 'JIRA_DATABASE_URL=postgresql://${JIRA_DB_USERNAME}@jira_postgresql/jiradb'
       - 'JIRA_DB_PASSWORD=${JIRA_DB_PASSWORD}'
       - 'JIRA_DELAYED_START=${JIRA_DELAYED_START}'
+    restart: unless-stopped
+  bitbucket_postgresql:
+    image: blacklabelops/postgres:${JIRA_POSTGRES_VERSION}
+    container_name: bitbucket_postgresql
+    hostname: bitbucket_postgresql
+    volumes:
+      - bitbucket_postgresql_volume:/var/lib/postgresql/data
+    environment:
+      - 'TZ=${ATLASSIAN_TIME_ZONE}'
+      - 'POSTGRES_DB=atlassiandb'
+      - 'POSTGRES_USER=${BITBUCKET_DB_USERNAME}'
+      - 'POSTGRES_PASSWORD=${BITBUCKET_DB_PASSWORD}'
+      - 'POSTGRES_ENCODING=UTF8'
+    restart: unless-stopped
+  bitbucket:
+    image: blacklabelops/bitbucket:${BITBUCKET_VERSION}
+    hostname: bitbucket
+    ports:
+      - 7999:7999
+    volumes:
+      - bitbucket_volume:/var/atlassian/bitbucket
+    environment:
+      - 'TZ=${ATLASSIAN_TIME_ZONE}'
+      - "CATALINA_OPTS=${BITBUCKET_JAVA_OPTIONS}"
+      - "BITBUCKET_PROXY_NAME=${BITBUCKET_DOMAIN_NAME}"
+      - "BITBUCKET_PROXY_PORT=${ATLASSIAN_PROXY_PORT}"
+      - "BITBUCKET_PROXY_SCHEME=${ATLASSIAN_PROXY_SCHEME}"
     restart: unless-stopped
 
   jenkins:
@@ -154,7 +191,11 @@ volumes:
     external: true
   jira_postgresql_volume:
     external: true
+  bitbucket_postgresql_volume:
+    external: true
   jira_volume:
+    external: true
+  bitbucket_volume:
     external: true
   keycloak_volume:
     external: true
